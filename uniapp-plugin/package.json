@@ -1,0 +1,16 @@
+{
+  "name": "Uni ID Card Capture",
+  "id": "uni-id-card-capture",
+  "version": "1.0.0",
+  "description": "Uni-App App-Plus native ID-card front/back capture plugin for Android.",
+  "_dp_type": "nativeplugin",
+  "_dp_nativeplugin": {
+    "android": {
+      "plugins": [{ "type": "module", "name": "uni-id-card-capture", "class": "io.github.uniidcardcapture.IdCardCaptureModule" }],
+      "integrateType": "aar",
+      "minSdkVersion": 21,
+      "compileOptions": { "sourceCompatibility": "1.8", "targetCompatibility": "1.8" },
+      "abis": ["armeabi-v7a", "arm64-v8a"]
+    }
+  }
+}

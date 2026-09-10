@@ -1,0 +1,45 @@
+name: Build Android Uni ID Card Capture Plugin
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [ 'idcardcapture/**', 'uniapp-plugin/package.json', '.github/workflows/build-android-plugin.yml' ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-aar:
+    runs-on: ubuntu-latest
+    env:
+      DCLOUD_SDK_REPOSITORY: ${{ vars.DCLOUD_ANDROID_SDK_REPOSITORY }}
+      DCLOUD_SDK_RELEASE_TAG: ${{ vars.DCLOUD_ANDROID_SDK_RELEASE_TAG }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download DCloud Uni-App compile-only AAR
+        env:
+          GH_TOKEN: ${{ secrets.DCLOUD_SDK_REPO_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN" || { echo "::error::Set Actions secret DCLOUD_SDK_REPO_TOKEN."; exit 1; }
+          test -n "$DCLOUD_SDK_REPOSITORY" || { echo "::error::Set Actions variable DCLOUD_ANDROID_SDK_REPOSITORY."; exit 1; }
+          test -n "$DCLOUD_SDK_RELEASE_TAG" || { echo "::error::Set Actions variable DCLOUD_ANDROID_SDK_RELEASE_TAG."; exit 1; }
+          mkdir -p idcardcapture/libs
+          gh release download "$DCLOUD_SDK_RELEASE_TAG" --repo "$DCLOUD_SDK_REPOSITORY" --pattern 'uniapp-v8-release.aar' --dir idcardcapture/libs
+          test -s idcardcapture/libs/uniapp-v8-release.aar
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build release AAR
+        run: ./gradlew :idcardcapture:assembleRelease --no-daemon
+      - name: Package Uni-App local plugin artifact
+        run: |
+          mkdir -p artifact/android
+          cp idcardcapture/build/outputs/aar/uni-id-card-capture-release.aar artifact/android/
+          cp uniapp-plugin/package.json artifact/package.json
+          zip -r UniIdCardCapture-android-plugin.zip artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UniIdCardCapture-android-plugin
+          path: UniIdCardCapture-android-plugin.zip
+          retention-days: 30

@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'io.github.uniidcardcapture'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 21
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    buildFeatures {
+        buildConfig false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+archivesBaseName = 'uni-id-card-capture'
+
+dependencies {
+    // 与当前 HBuilderX 版本一致的 DCloud 离线 SDK 中取得。
+    // 仅用于编译，不能被打入最终插件 AAR，否则会与 UniApp 宿主冲突。
+    compileOnly fileTree(include: ['uniapp-v8-release.aar'], dir: 'libs')
+    compileOnly 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+    compileOnly 'androidx.core:core:1.1.0'
+    compileOnly 'androidx.fragment:fragment:1.1.0'
+    compileOnly 'androidx.appcompat:appcompat:1.1.0'
+    compileOnly 'androidx.recyclerview:recyclerview:1.1.0'
+    compileOnly 'com.alibaba:fastjson:1.2.83'
+}
