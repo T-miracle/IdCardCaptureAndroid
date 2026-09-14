@@ -18,9 +18,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Download DCloud Uni-App compile-only AAR
         env:
-          GH_TOKEN: ${{ secrets.DCLOUD_SDK_REPO_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          test -n "$GH_TOKEN" || { echo "::error::Set Actions secret DCLOUD_SDK_REPO_TOKEN."; exit 1; }
           test -n "$DCLOUD_SDK_REPOSITORY" || { echo "::error::Set Actions variable DCLOUD_ANDROID_SDK_REPOSITORY."; exit 1; }
           test -n "$DCLOUD_SDK_RELEASE_TAG" || { echo "::error::Set Actions variable DCLOUD_ANDROID_SDK_RELEASE_TAG."; exit 1; }
           mkdir -p idcardcapture/libs
