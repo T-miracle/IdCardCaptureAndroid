@@ -90,12 +90,21 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         sessionId = getIntent().getStringExtra(EXTRA_SESSION_ID);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        );
+        configureSystemBars();
         buildContentView();
         ensureCameraPermission();
+    }
+
+    /** Keeps system bars from inheriting the host application's white theme in landscape mode. */
+    private void configureSystemBars() {
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.setStatusBarColor(0x99000000);
+        window.setNavigationBarColor(0x99000000);
+        window.getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        );
     }
 
     /** Creates the prototype layout without XML resources so the AAR has no host-theme dependency. */
@@ -109,6 +118,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         root.addView(surfaceView, matchParentParams());
 
         maskView = new CaptureMaskView(this);
+        maskView.setActiveSide(activeSide);
         root.addView(maskView, matchParentParams());
         root.addView(createTopBar(), topBarParams());
         shutterButton = createShutterButton();
@@ -659,6 +669,9 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
     /** Selects a capture slot; an empty slot immediately resumes the camera for that side. */
     private void selectSide(String targetSide) {
         activeSide = "back".equals(targetSide) ? "back" : "front";
+        if (maskView != null) {
+            maskView.setActiveSide(activeSide);
+        }
         updateSlotState();
         if (pathForActiveSide() == null) {
             openCameraIfReady();

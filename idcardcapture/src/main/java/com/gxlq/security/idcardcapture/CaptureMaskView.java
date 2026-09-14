@@ -1,6 +1,8 @@
 package io.github.uniidcardcapture;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -11,11 +13,24 @@ import android.view.View;
 final class CaptureMaskView extends View {
     static final float ID_CARD_RATIO = 85.60f / 53.98f;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint guidePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF frameRect = new RectF();
+    private final RectF guideRect = new RectF();
+    private final Bitmap frontGuide;
+    private final Bitmap backGuide;
+    private boolean showBackGuide;
 
     CaptureMaskView(Context context) {
         super(context);
+        frontGuide = BitmapFactory.decodeResource(getResources(), R.drawable.id_card_front_guide);
+        backGuide = BitmapFactory.decodeResource(getResources(), R.drawable.id_card_back_guide);
         setWillNotDraw(false);
+    }
+
+    /** Switches the guide artwork to match the side currently being captured. */
+    void setActiveSide(String side) {
+        showBackGuide = "back".equals(side);
+        invalidate();
     }
 
     RectF getFrameRect() {
@@ -48,6 +63,18 @@ final class CaptureMaskView extends View {
         paint.setStrokeWidth(dp(2));
         paint.setColor(Color.WHITE);
         canvas.drawRect(frameRect, paint);
+
+        Bitmap guide = showBackGuide ? backGuide : frontGuide;
+        if (guide != null) {
+            float guidePadding = dp(8);
+            guideRect.set(
+                frameRect.left + guidePadding,
+                frameRect.top + guidePadding,
+                frameRect.right - guidePadding,
+                frameRect.bottom - guidePadding
+            );
+            canvas.drawBitmap(guide, null, guideRect, guidePaint);
+        }
     }
 
     private float dp(float value) {
