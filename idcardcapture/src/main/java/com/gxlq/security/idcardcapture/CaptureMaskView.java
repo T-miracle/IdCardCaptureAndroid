@@ -42,10 +42,10 @@ final class CaptureMaskView extends View {
         super.onDraw(canvas);
         int width = getWidth();
         int height = getHeight();
-        float horizontalPadding = dp(44);
+        float horizontalPadding = dp(60);
         float panelReserve = Math.min(dp(300), width * 0.28f);
         float maxFrameWidth = Math.max(dp(320), width - horizontalPadding * 2 - panelReserve);
-        float maxFrameHeight = height - dp(150);
+        float maxFrameHeight = height - dp(132);
         float frameWidth = Math.min(maxFrameWidth, maxFrameHeight * ID_CARD_RATIO);
         float frameHeight = frameWidth / ID_CARD_RATIO;
         float left = horizontalPadding;

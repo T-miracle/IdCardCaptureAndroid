@@ -4,6 +4,7 @@
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#2F80ED</item>
         <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">#99000000</item>
         <item name="android:navigationBarColor">#99000000</item>

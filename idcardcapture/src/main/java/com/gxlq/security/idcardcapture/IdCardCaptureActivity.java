@@ -95,16 +95,36 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         ensureCameraPermission();
     }
 
-    /** Keeps system bars from inheriting the host application's white theme in landscape mode. */
+    /** Hides the status bar for the landscape capture flow while preserving the navigation bar. */
     private void configureSystemBars() {
         Window window = getWindow();
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.setStatusBarColor(0x99000000);
         window.setNavigationBarColor(0x99000000);
         window.getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         );
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        configureSystemBars();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            configureSystemBars();
+        }
     }
 
     /** Creates the prototype layout without XML resources so the AAR has no host-theme dependency. */
@@ -155,7 +175,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
     }
 
     private FrameLayout.LayoutParams shutterParams() {
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(dp(76), dp(76));
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(dp(68), dp(68));
         params.gravity = Gravity.CENTER;
         // Keep a visible separation from the right-side ID-card panel.
         params.leftMargin = dp(84);
@@ -235,7 +255,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         shutter.setText("拍照");
         shutter.setTextSize(13);
         shutter.setTextColor(Color.DKGRAY);
-        shutter.setBackground(roundDrawable(Color.WHITE, Color.DKGRAY, dp(4), dp(38)));
+        shutter.setBackground(roundDrawable(Color.WHITE, Color.DKGRAY, dp(4), dp(34)));
         shutter.setOnClickListener(view -> takePhoto());
         return shutter;
     }
