@@ -32,4 +32,14 @@ public class CapturedJpegOrientationTest {
         assertTrue(CapturedJpegOrientation.mirrored(ExifInterface.ORIENTATION_TRANSPOSE));
         assertTrue(CapturedJpegOrientation.mirrored(ExifInterface.ORIENTATION_TRANSVERSE));
     }
+
+    @Test
+    public void postCropRotationMatchesPreviewForBothLandscapeDirections() {
+        // Both landscape directions can leave the normalized JPEG opposite to the preview.
+        // Rotate only the selected crop; rotating the full bitmap first picks the opposite side.
+        assertEquals(180, CapturedJpegOrientation.afterCropRotation(0, 180));
+        assertEquals(180, CapturedJpegOrientation.afterCropRotation(180, 0));
+        assertEquals(0, CapturedJpegOrientation.afterCropRotation(90, 90));
+        assertEquals(0, CapturedJpegOrientation.afterCropRotation(270, 270));
+    }
 }

@@ -76,6 +76,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
     private View sidePanel;
     private Camera camera;
     private int cameraId = -1;
+    private int displayOrientation;
     private int jpegRotation;
     private String sessionId;
     /** The active slot always starts at the front side, regardless of the legacy input option. */
@@ -429,7 +430,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(cameraId, info);
         int degrees = displayDegrees();
-        int displayOrientation = (info.orientation - degrees + 360) % 360;
+        displayOrientation = (info.orientation - degrees + 360) % 360;
         jpegRotation = (info.orientation + degrees) % 360;
         camera.setDisplayOrientation(displayOrientation);
 
@@ -533,13 +534,17 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
     private void processCapturedJpeg(byte[] jpegData) {
         try {
             Bitmap bitmap = decodeCapture(jpegData);
-            Bitmap rotated = orientCapturedJpeg(bitmap, jpegData);
-            if (rotated != bitmap) {
+            Bitmap normalized = orientCapturedJpeg(bitmap, jpegData);
+            if (normalized != bitmap) {
                 bitmap.recycle();
             }
-            Bitmap card = cropToGuideFrame(rotated);
-            if (card != rotated) {
-                rotated.recycle();
+            Bitmap cropped = cropToGuideFrame(normalized);
+            if (cropped != normalized) {
+                normalized.recycle();
+            }
+            Bitmap card = rotateCropToPreview(cropped);
+            if (card != cropped) {
+                cropped.recycle();
             }
             String capturedPath = saveCapture(card, activeSide);
             setPathForActiveSide(capturedPath);
@@ -595,6 +600,17 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
             matrix.postScale(-1f, 1f);
         }
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    /** Rotate the selected pixels after cropping so the guide still addresses the same camera area. */
+    private Bitmap rotateCropToPreview(Bitmap crop) {
+        int rotation = CapturedJpegOrientation.afterCropRotation(displayOrientation, jpegRotation);
+        if (rotation == 0) {
+            return crop;
+        }
+        Matrix matrix = new Matrix();
+        matrix.setRotate(rotation);
+        return Bitmap.createBitmap(crop, 0, 0, crop.getWidth(), crop.getHeight(), matrix, true);
     }
 
     /** InputStream support was added in API 24; older devices read the same bytes through a cache file. */

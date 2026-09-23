@@ -32,4 +32,8 @@ final class CapturedJpegOrientation {
             || exifOrientation == ExifInterface.ORIENTATION_TRANSPOSE
             || exifOrientation == ExifInterface.ORIENTATION_TRANSVERSE;
     }
+
+    static int afterCropRotation(int displayOrientation, int jpegRotation) {
+        return (displayOrientation - jpegRotation + 360) % 360;
+    }
 }
