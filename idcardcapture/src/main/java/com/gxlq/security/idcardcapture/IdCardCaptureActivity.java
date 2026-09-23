@@ -14,7 +14,9 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.os.Environment;
@@ -35,6 +37,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONArray;
 
 import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -530,7 +533,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
     private void processCapturedJpeg(byte[] jpegData) {
         try {
             Bitmap bitmap = decodeCapture(jpegData);
-            Bitmap rotated = rotate(bitmap, jpegRotation);
+            Bitmap rotated = orientCapturedJpeg(bitmap, jpegData);
             if (rotated != bitmap) {
                 bitmap.recycle();
             }
@@ -578,13 +581,45 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         return sampleSize;
     }
 
-    private Bitmap rotate(Bitmap source, int rotation) {
-        if (rotation == 0) {
+    /** Apply only the orientation still recorded in the JPEG, never the requested camera rotation again. */
+    private Bitmap orientCapturedJpeg(Bitmap source, byte[] jpegData) {
+        int exifOrientation = readJpegOrientation(jpegData);
+        int rotation = CapturedJpegOrientation.degrees(exifOrientation);
+        boolean mirrored = CapturedJpegOrientation.mirrored(exifOrientation);
+        if (rotation == 0 && !mirrored) {
             return source;
         }
         Matrix matrix = new Matrix();
-        matrix.postRotate(rotation);
+        matrix.setRotate(rotation);
+        if (mirrored) {
+            matrix.postScale(-1f, 1f);
+        }
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    /** InputStream support was added in API 24; older devices read the same bytes through a cache file. */
+    private int readJpegOrientation(byte[] jpegData) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                ExifInterface exif = new ExifInterface(new ByteArrayInputStream(jpegData));
+                return exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+            }
+            File temporaryJpeg = File.createTempFile("idcard_orientation_", ".jpg", getCacheDir());
+            try {
+                try (FileOutputStream stream = new FileOutputStream(temporaryJpeg)) {
+                    stream.write(jpegData);
+                }
+                ExifInterface exif = new ExifInterface(temporaryJpeg.getAbsolutePath());
+                return exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+            } finally {
+                if (!temporaryJpeg.delete()) {
+                    Log.w(CAMERA_LOG_TAG, "temporary JPEG cleanup failed");
+                }
+            }
+        } catch (IOException exception) {
+            Log.w(CAMERA_LOG_TAG, "JPEG orientation unavailable; using encoded pixel orientation", exception);
+            return ExifInterface.ORIENTATION_UNDEFINED;
+        }
     }
 
     private Bitmap cropToCardRatio(Bitmap source) {

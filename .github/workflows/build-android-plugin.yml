@@ -32,7 +32,7 @@ jobs:
       - name: Grant Gradle wrapper execute permission
         run: chmod +x gradlew
       - name: Build release AAR
-        run: ./gradlew :idcardcapture:assembleRelease --no-daemon
+        run: ./gradlew :idcardcapture:testReleaseUnitTest :idcardcapture:assembleRelease --no-daemon
       - name: Package Uni-App local plugin artifact
         run: |
           mkdir -p artifact/android

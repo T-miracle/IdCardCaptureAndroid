@@ -33,4 +33,5 @@ dependencies {
     compileOnly 'androidx.appcompat:appcompat:1.1.0'
     compileOnly 'androidx.recyclerview:recyclerview:1.1.0'
     compileOnly 'com.alibaba:fastjson:1.2.83'
+    testImplementation 'junit:junit:4.13.2'
 }
