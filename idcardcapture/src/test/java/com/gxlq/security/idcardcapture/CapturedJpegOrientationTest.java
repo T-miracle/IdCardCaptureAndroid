@@ -4,6 +4,7 @@ import android.media.ExifInterface;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -36,10 +37,22 @@ public class CapturedJpegOrientationTest {
     @Test
     public void postCropRotationMatchesPreviewForBothLandscapeDirections() {
         // Both landscape directions can leave the normalized JPEG opposite to the preview.
-        // Rotate only the selected crop; rotating the full bitmap first picks the opposite side.
+        // The crop rectangle must first be mapped to that JPEG coordinate space.
         assertEquals(180, CapturedJpegOrientation.afterCropRotation(0, 180));
         assertEquals(180, CapturedJpegOrientation.afterCropRotation(180, 0));
         assertEquals(0, CapturedJpegOrientation.afterCropRotation(90, 90));
         assertEquals(0, CapturedJpegOrientation.afterCropRotation(270, 270));
+    }
+
+    @Test
+    public void guideOnLeftSelectsOppositeJpegCoordinatesBeforeHalfTurn() {
+        // A 180-degree JPEG-to-preview rotation reverses both axes. The guide's
+        // source area must be remapped before rotating the selected pixels.
+        assertArrayEquals(new float[] {0.4f, 0.3f, 0.9f, 0.8f},
+            CapturedJpegOrientation.previewRectInCapturedJpeg(0.1f, 0.2f, 0.6f, 0.7f, 180),
+            0.0001f);
+        assertArrayEquals(new float[] {0.1f, 0.2f, 0.6f, 0.7f},
+            CapturedJpegOrientation.previewRectInCapturedJpeg(0.1f, 0.2f, 0.6f, 0.7f, 0),
+            0.0001f);
     }
 }

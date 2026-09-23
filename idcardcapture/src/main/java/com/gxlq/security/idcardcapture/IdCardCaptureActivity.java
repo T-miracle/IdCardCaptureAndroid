@@ -538,11 +538,12 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
             if (normalized != bitmap) {
                 bitmap.recycle();
             }
-            Bitmap cropped = cropToGuideFrame(normalized);
+            int rotationToPreview = CapturedJpegOrientation.afterCropRotation(displayOrientation, jpegRotation);
+            Bitmap cropped = cropToGuideFrame(normalized, rotationToPreview);
             if (cropped != normalized) {
                 normalized.recycle();
             }
-            Bitmap card = rotateCropToPreview(cropped);
+            Bitmap card = rotateCropToPreview(cropped, rotationToPreview);
             if (card != cropped) {
                 cropped.recycle();
             }
@@ -602,14 +603,13 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
-    /** Rotate the selected pixels after cropping so the guide still addresses the same camera area. */
-    private Bitmap rotateCropToPreview(Bitmap crop) {
-        int rotation = CapturedJpegOrientation.afterCropRotation(displayOrientation, jpegRotation);
-        if (rotation == 0) {
+    /** Rotate the selected pixels after the guide rectangle has been mapped to JPEG coordinates. */
+    private Bitmap rotateCropToPreview(Bitmap crop, int rotationToPreview) {
+        if (rotationToPreview == 0) {
             return crop;
         }
         Matrix matrix = new Matrix();
-        matrix.setRotate(rotation);
+        matrix.setRotate(rotationToPreview);
         return Bitmap.createBitmap(crop, 0, 0, crop.getWidth(), crop.getHeight(), matrix, true);
     }
 
@@ -658,7 +658,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
      * the same camera center. When the UI geometry is unavailable, it falls back to a centered
      * ID-card-ratio crop.
      */
-    private Bitmap cropToGuideFrame(Bitmap source) {
+    private Bitmap cropToGuideFrame(Bitmap source, int rotationToPreview) {
         RectF guide = maskView == null ? null : maskView.getFrameRect();
         if (guide == null || guide.isEmpty() || surfaceView == null
             || surfaceView.getWidth() <= 0 || surfaceView.getHeight() <= 0) {
@@ -676,6 +676,8 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         if (normalizedRight <= normalizedLeft || normalizedBottom <= normalizedTop) {
             return cropToCardRatio(source);
         }
+        float[] jpegGuide = CapturedJpegOrientation.previewRectInCapturedJpeg(
+            normalizedLeft, normalizedTop, normalizedRight, normalizedBottom, rotationToPreview);
 
         float sourceWidth = source.getWidth();
         float sourceHeight = source.getHeight();
@@ -694,10 +696,10 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
             visibleTop = (sourceHeight - visibleHeight) / 2f;
         }
 
-        int left = Math.max(0, Math.round(visibleLeft + normalizedLeft * visibleWidth));
-        int top = Math.max(0, Math.round(visibleTop + normalizedTop * visibleHeight));
-        int right = Math.min(source.getWidth(), Math.round(visibleLeft + normalizedRight * visibleWidth));
-        int bottom = Math.min(source.getHeight(), Math.round(visibleTop + normalizedBottom * visibleHeight));
+        int left = Math.max(0, Math.round(visibleLeft + jpegGuide[0] * visibleWidth));
+        int top = Math.max(0, Math.round(visibleTop + jpegGuide[1] * visibleHeight));
+        int right = Math.min(source.getWidth(), Math.round(visibleLeft + jpegGuide[2] * visibleWidth));
+        int bottom = Math.min(source.getHeight(), Math.round(visibleTop + jpegGuide[3] * visibleHeight));
         if (right <= left || bottom <= top) {
             return cropToCardRatio(source);
         }

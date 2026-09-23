@@ -36,4 +36,13 @@ final class CapturedJpegOrientation {
     static int afterCropRotation(int displayOrientation, int jpegRotation) {
         return (displayOrientation - jpegRotation + 360) % 360;
     }
+
+    /** Invert the JPEG-to-preview half-turn before selecting pixels from the encoded image. */
+    static float[] previewRectInCapturedJpeg(float left, float top, float right, float bottom,
+                                              int rotationToPreview) {
+        if (rotationToPreview == 180) {
+            return new float[] {1f - right, 1f - bottom, 1f - left, 1f - top};
+        }
+        return new float[] {left, top, right, bottom};
+    }
 }
