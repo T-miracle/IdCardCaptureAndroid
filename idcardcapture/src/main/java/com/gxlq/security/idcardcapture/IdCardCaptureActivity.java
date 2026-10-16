@@ -445,7 +445,7 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
                 + ", displayed=" + previewWidth + "x" + previewHeight
                 + ", orientation=" + displayOrientation);
         }
-        Camera.Size picture = choosePictureSize(parameters.getSupportedPictureSizes());
+        Camera.Size picture = choosePictureSize(parameters.getSupportedPictureSizes(), preview);
         if (picture != null) {
             parameters.setPictureSize(picture.width, picture.height);
             Log.i(CAMERA_LOG_TAG, "picture size=" + picture.width + "x" + picture.height
@@ -456,6 +456,13 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         }
         camera.setParameters(parameters);
+        Camera.Parameters applied = camera.getParameters();
+        Camera.Size appliedPreview = applied.getPreviewSize();
+        Camera.Size appliedPicture = applied.getPictureSize();
+        if (appliedPreview != null && appliedPicture != null) {
+            Log.i(CAMERA_LOG_TAG, "applied preview=" + appliedPreview.width + "x" + appliedPreview.height
+                + ", picture=" + appliedPicture.width + "x" + appliedPicture.height);
+        }
     }
 
     private int findBackCamera() {
@@ -501,17 +508,21 @@ public class IdCardCaptureActivity extends Activity implements SurfaceHolder.Cal
         return best;
     }
 
-    private Camera.Size choosePictureSize(List<Camera.Size> sizes) {
+    private Camera.Size choosePictureSize(List<Camera.Size> sizes, Camera.Size preview) {
         if (sizes == null || sizes.isEmpty()) {
             return null;
         }
-        Camera.Size best = sizes.get(0);
-        for (Camera.Size size : sizes) {
-            if (size.width * size.height > best.width * best.height) {
-                best = size;
-            }
+        int[] widths = new int[sizes.size()];
+        int[] heights = new int[sizes.size()];
+        for (int i = 0; i < sizes.size(); i++) {
+            widths[i] = sizes.get(i).width;
+            heights[i] = sizes.get(i).height;
         }
-        return best;
+        int index = CaptureSizeSelector.pictureIndex(
+            preview == null ? 0 : preview.width,
+            preview == null ? 0 : preview.height,
+            widths, heights);
+        return sizes.get(index);
     }
 
     private void takePhoto() {
